@@ -1,0 +1,240 @@
+/* ── Order Confirmation Page ────────────────────────────────── */
+
+.oc-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0ebff 0%, #e8f4ff 100%);
+  padding: 40px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative blobs */
+.oc-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.oc-blob-1 {
+  width: 400px;
+  height: 400px;
+  background: blueviolet;
+  top: -100px;
+  left: -100px;
+}
+.oc-blob-2 {
+  width: 350px;
+  height: 350px;
+  background: #9c27b0;
+  bottom: -80px;
+  right: -80px;
+}
+
+/* Card */
+.oc-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 48px 40px;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  box-shadow:
+    0 20px 60px rgba(110, 0, 220, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 1;
+  animation: oc-slide-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes oc-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── SVG Check Animation ── */
+.oc-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.oc-circle {
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, blueviolet, #9c27b0);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(138, 43, 226, 0.4);
+  animation: oc-pop 0.5s 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes oc-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.oc-check {
+  width: 48px;
+  height: 48px;
+}
+
+.oc-check-circle {
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 2;
+}
+
+.oc-check-mark {
+  stroke: #fff;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 38;
+  stroke-dashoffset: 38;
+  animation: oc-draw 0.45s 0.7s ease forwards;
+}
+
+@keyframes oc-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── Text ── */
+.oc-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+
+.oc-subtitle {
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 28px;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Order ID Box ── */
+.oc-id-box {
+  background: linear-gradient(135deg, #f5f0ff, #ede7ff);
+  border: 1.5px solid #d4b8ff;
+  border-radius: 14px;
+  padding: 16px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.oc-id-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8b5cf6;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.oc-id-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #3b0086;
+  word-break: break-all;
+  font-family: "Courier New", monospace;
+}
+
+/* ── Note ── */
+.oc-note {
+  color: #777;
+  font-size: 0.85rem;
+  margin-bottom: 32px;
+}
+
+.oc-link {
+  color: blueviolet;
+  text-decoration: none;
+  font-weight: 600;
+}
+.oc-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Action Buttons ── */
+.oc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.oc-btn:hover {
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.oc-btn-primary {
+  background: linear-gradient(135deg, blueviolet, #9c27b0);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(138, 43, 226, 0.35);
+}
+.oc-btn-primary:hover {
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(138, 43, 226, 0.45);
+}
+
+.oc-btn-secondary {
+  background: #f5f0ff;
+  color: blueviolet;
+  border: 1.5px solid #d4b8ff;
+}
+.oc-btn-secondary:hover {
+  color: blueviolet;
+  background: #ede7ff;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .oc-card {
+    padding: 36px 24px;
+  }
+  .oc-title {
+    font-size: 1.6rem;
+  }
+}
