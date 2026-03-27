@@ -6,7 +6,7 @@ import { AiOutlineShoppingCart } from 'react-icons/ai'
 import { AiOutlineEye } from 'react-icons/ai'
 import { PiCurrencyInrFill } from 'react-icons/pi'
 import { toast } from 'react-toastify';
-import { Checkbox, Radio } from "antd";
+
 import axios from 'axios';
 import { Price } from '../pages/Price';
 import { ColorRing } from 'react-loader-spinner'
@@ -15,7 +15,7 @@ const CarsHome = () => {
     const [cars, setcars] = useState([]);
     const [cart, setcart] = useCart()
     const [brand, setBrand] = useState([])
-    const [selectedBrands, setSelectedBrands] = useState([]);
+    const [selectedBrand, setSelectedBrand] = useState('');
     const [selectedPriceRange, setSelectedPriceRange] = useState(null);
     const [search, setsearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -46,22 +46,20 @@ const CarsHome = () => {
         }
     };
 
-    const handleBrandChange = (e, brandId) => {
-        const isChecked = e.target.checked;
-        if (isChecked) {
-            setSelectedBrands((prevSelectedBrands) => [...prevSelectedBrands, brandId]);
-        } else {
-            setSelectedBrands((prevSelectedBrands) => prevSelectedBrands.filter((id) => id !== brandId));
-        }
+    const handleBrandChange = (brandName) => {
+        // Clicking the same brand again deselects it (shows all bikes)
+        setSelectedBrand((prev) => (prev === brandName ? '' : brandName));
     };
 
-    const handlePriceChange = (e) => {
-        const priceRange = e.target.value;
-        setSelectedPriceRange(priceRange);
+    const handlePriceChange = (priceArray) => {
+        // Clicking the same range again deselects it
+        setSelectedPriceRange((prev) =>
+            JSON.stringify(prev) === JSON.stringify(priceArray) ? null : priceArray
+        );
     };
 
     const resetFilters = () => {
-        setSelectedBrands([]);
+        setSelectedBrand('');
         setSelectedPriceRange(null);
         setsearch('');
     };
@@ -95,31 +93,86 @@ const CarsHome = () => {
                         <h4 className=" mt-4">Filter By Brands</h4>
                         <div className="d-flex flex-column">
                             {brand?.map((c) => (
-                                <Checkbox
+                                <div
                                     key={c._id}
-                                    onChange={(e) => handleBrandChange(e, c.name)}
-                                    checked={selectedBrands.includes(c.name)}
+                                    onClick={() => handleBrandChange(c.name)}
+                                    style={{
+                                        cursor: 'pointer',
+                                        padding: '6px 10px',
+                                        marginBottom: '4px',
+                                        borderRadius: '8px',
+                                        fontWeight: selectedBrand === c.name ? '700' : '400',
+                                        background: selectedBrand === c.name ? '#ede7ff' : 'transparent',
+                                        color: selectedBrand === c.name ? 'blueviolet' : 'inherit',
+                                        border: selectedBrand === c.name ? '1.5px solid blueviolet' : '1.5px solid transparent',
+                                        transition: 'all 0.18s',
+                                    }}
                                 >
-                                    {c.name}
-                                </Checkbox>
+                                    {selectedBrand === c.name ? '● ' : '○ '}{c.name}
+                                </div>
                             ))}
                         </div>
-                        <h4 className=" mt-4">Filter By Price Range</h4>
-                        <div className="d-flex flex-column">
-                            <Radio.Group onChange={handlePriceChange} value={selectedPriceRange}>
-                                {Price.map((p) => (
-                                    <div key={p._id}>
-                                        <Radio value={p.array}>{p.name}</Radio>
+                        <h4 className="mt-4" style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a2e' }}>
+                            💰 Filter By Price
+                        </h4>
+                        <div className="d-flex flex-column" style={{ gap: '6px' }}>
+                            {Price.map((p) => {
+                                const isSelected = JSON.stringify(selectedPriceRange) === JSON.stringify(p.array);
+                                return (
+                                    <div
+                                        key={p._id}
+                                        onClick={() => handlePriceChange(p.array)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            padding: '8px 12px',
+                                            borderRadius: '10px',
+                                            border: isSelected ? '1.5px solid blueviolet' : '1.5px solid #e5e7eb',
+                                            background: isSelected ? '#ede7ff' : '#fff',
+                                            transition: 'all 0.18s',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                        }}
+                                    >
+                                        <span style={{
+                                            fontSize: '0.85rem',
+                                            fontWeight: isSelected ? 700 : 400,
+                                            color: isSelected ? 'blueviolet' : '#374151',
+                                        }}>
+                                            {isSelected ? '● ' : '○ '}{p.name}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.7rem',
+                                            fontWeight: 600,
+                                            padding: '2px 8px',
+                                            borderRadius: '20px',
+                                            background: isSelected ? 'blueviolet' : '#f3f4f6',
+                                            color: isSelected ? '#fff' : '#6b7280',
+                                        }}>
+                                            {p.label}
+                                        </span>
                                     </div>
-                                ))}
-                            </Radio.Group>
+                                );
+                            })}
                         </div>
-                        <div className="d-flex flex-column">
+                        <div className="d-flex flex-column mt-4">
                             <button
-                                className="btn btn-outline-dark my-4"
+                                style={{
+                                    background: 'none',
+                                    border: '1.5px solid #d1d5db',
+                                    borderRadius: '10px',
+                                    padding: '8px 0',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: '#6b7280',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.18s',
+                                }}
+                                onMouseEnter={e => { e.target.style.borderColor = 'blueviolet'; e.target.style.color = 'blueviolet'; }}
+                                onMouseLeave={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.color = '#6b7280'; }}
                                 onClick={resetFilters}
                             >
-                                RESET FILTERS
+                                ✕ Reset All Filters
                             </button>
                         </div>
                     </div>
@@ -135,7 +188,7 @@ const CarsHome = () => {
                             <div className="row">
                                 {cars.filter((bike) => {
                                     return search.toString().toLowerCase() === '' ? bike : bike.brand?.toLowerCase().includes(search.toLowerCase()) || bike.model?.toLowerCase().includes(search.toLowerCase())
-                                }).filter((bike) => selectedBrands.length === 0 || selectedBrands.some(b => b.toLowerCase() === bike.brand?.toLowerCase()))
+                                }).filter((bike) => selectedBrand === '' || bike.brand?.toLowerCase() === selectedBrand.toLowerCase())
                                     .filter((bike) => {
                                         if (!selectedPriceRange) return true;
                                         const [minLakh, maxLakh] = selectedPriceRange;

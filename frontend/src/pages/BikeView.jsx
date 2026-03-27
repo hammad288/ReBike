@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { AiOutlineShoppingCart, AiOutlineEye } from 'react-icons/ai';
 import { BsSpeedometer } from 'react-icons/bs';
 import { PiCurrencyInrFill } from 'react-icons/pi';
@@ -11,6 +11,7 @@ import '../styles/carview.css';
 
 const BikeView = () => {
     const params = useParams();
+    const navigate = useNavigate();
     const [bike, setBike] = useState(null);
     const [relatedBikes, setRelatedBikes] = useState([]);
     const [cart, setcart] = useCart();
@@ -152,9 +153,11 @@ const BikeView = () => {
                             className="btn btn-lg text-white"
                             style={{ backgroundColor: 'blueviolet' }}
                             onClick={() => {
-                                setcart([...cart, bike]);
-                                localStorage.setItem('cart', JSON.stringify([...cart, bike]));
+                                const updatedCart = [...cart, bike];
+                                setcart(updatedCart);
+                                localStorage.setItem('cart', JSON.stringify(updatedCart));
                                 notify();
+                                navigate('/cart');
                             }}
                         >
                             <AiOutlineShoppingCart size={20} className="pb-1" /> Add To Cart
