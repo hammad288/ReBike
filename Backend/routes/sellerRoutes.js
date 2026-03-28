@@ -11,10 +11,10 @@ router.post("/bikes", async (req, res) => {
   try {
     const { images } = req.body;
 
-    // Backend validation — exactly 5 images required
-    if (!images || !Array.isArray(images) || images.length !== 5) {
+    // Backend validation — minimum 3, maximum 5 images
+    if (!images || !Array.isArray(images) || images.length < 3 || images.length > 5) {
       return res.status(400).json({
-        message: `Please upload exactly 5 bike images. You provided ${images?.length || 0}.`,
+        message: `Please upload at least 3 images of the product (max 5). You provided ${images?.length || 0}.`,
       });
     }
 

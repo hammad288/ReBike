@@ -36,7 +36,8 @@ const BikeSchema = Yup.object().shape({
         .max(500, 'Description must not exceed 500 characters'),
 });
 
-const REQUIRED_IMAGES = 5;
+const MIN_IMAGES = 3;
+const MAX_IMAGES = 5;
 
 const AddBike = () => {
     const [auth] = useAuth();
@@ -48,29 +49,29 @@ const AddBike = () => {
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         const total = images.length + files.length;
-        if (total > REQUIRED_IMAGES) {
-            setImageError(`Maximum ${REQUIRED_IMAGES} images allowed.`);
+        if (total > MAX_IMAGES) {
+            setImageError(`Maximum ${MAX_IMAGES} images allowed.`);
             return;
         }
         setImages(prev => [...prev, ...files]);
         setImagePreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
-        // Clear error as soon as they reach exactly 5
-        if (total === REQUIRED_IMAGES) setImageError('');
+        // Clear error once minimum is met
+        if (images.length + files.length >= MIN_IMAGES) setImageError('');
     };
 
     const removeImage = (index) => {
         const newImages = images.filter((_, i) => i !== index);
         setImages(newImages);
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
-        if (newImages.length < REQUIRED_IMAGES) {
-            setImageError(`Please upload at least ${REQUIRED_IMAGES} bike images.`);
+        if (newImages.length < MIN_IMAGES) {
+            setImageError(`Please upload at least ${MIN_IMAGES} images of the product.`);
         }
     };
 
     const handleSubmit = async (values, { setSubmitting }) => {
-        // Frontend gate — block submit if not exactly 5 images
-        if (images.length !== REQUIRED_IMAGES) {
-            setImageError(`Please upload exactly ${REQUIRED_IMAGES} bike images.`);
+        // Block submit if fewer than minimum images
+        if (images.length < MIN_IMAGES) {
+            setImageError(`Please upload at least ${MIN_IMAGES} images of the product.`);
             setSubmitting(false);
             return;
         }
@@ -83,17 +84,25 @@ const AddBike = () => {
                 }))
             );
 
+            console.log('Submitting bike with images count:', imageBase64s.length);
+            console.log('Auth token present:', !!auth?.token);
+            console.log('User role:', auth?.user?.role);
+
             const bikePayload = { ...values, images: imageBase64s };
             const result = await sellerAPI.addBike(bikePayload, auth.token);
+
+            console.log('API result:', result);
 
             if (result.success) {
                 toast.success(result.data.message || 'Bike added successfully!');
                 navigate('/dashboard/seller/my-bikes');
             } else {
-                toast.error(result.message);
+                // Show exact error from backend
+                toast.error(result.message || 'Failed to add bike.');
+                console.error('Backend error:', result.message);
             }
         } catch (err) {
-            console.error(err);
+            console.error('Submit error:', err);
             toast.error('An unexpected error occurred');
         } finally {
             setSubmitting(false);
@@ -185,28 +194,35 @@ const AddBike = () => {
                                             {/* ── Image Upload ── */}
                                             <div className="col-12 mb-4">
                                                 <label className="form-label fw-semibold">
-                                                    📸 Upload 5 Bike Images{' '}
+                                                    📸 Bike Images{' '}
                                                     <span className="text-danger">*</span>
-                                                    <span className="text-muted small ms-1">(exactly 5 required)</span>
+                                                    <span className="text-muted small ms-1">(min 3, up to {MAX_IMAGES})</span>
                                                 </label>
 
                                                 {/* Progress indicator */}
                                                 <div className="d-flex align-items-center gap-2 mb-2">
-                                                    {[...Array(REQUIRED_IMAGES)].map((_, i) => (
+                                                    {[...Array(MAX_IMAGES)].map((_, i) => (
                                                         <div
                                                             key={i}
                                                             style={{
                                                                 width: '36px', height: '8px', borderRadius: '4px',
-                                                                background: i < images.length ? 'blueviolet' : '#ddd',
+                                                                background: i < images.length
+                                                                    ? (i < MIN_IMAGES ? 'blueviolet' : '#4ade80')
+                                                                    : (i < MIN_IMAGES ? '#fca5a5' : '#ddd'),
                                                                 transition: 'background 0.3s'
                                                             }}
                                                         />
                                                     ))}
-                                                    <span className="text-muted small">{images.length} / {REQUIRED_IMAGES}</span>
+                                                    <span className="text-muted small">{images.length} / {MAX_IMAGES} &nbsp;
+                                                        {images.length >= MIN_IMAGES
+                                                            ? <span style={{ color: 'green' }}>✓ minimum met</span>
+                                                            : <span style={{ color: '#dc3545' }}>{MIN_IMAGES - images.length} more required</span>
+                                                        }
+                                                    </span>
                                                 </div>
 
-                                                {/* Upload button — hidden once 5 reached */}
-                                                {images.length < REQUIRED_IMAGES && (
+                                                {/* Upload button — hidden once max reached */}
+                                                {images.length < MAX_IMAGES && (
                                                     <label
                                                         className="btn btn-outline-secondary w-100 py-3 d-flex align-items-center justify-content-center gap-2"
                                                         style={{
@@ -214,7 +230,11 @@ const AddBike = () => {
                                                             borderRadius: '10px', cursor: 'pointer'
                                                         }}
                                                     >
-                                                        📷 Click to Upload Bike Images ({REQUIRED_IMAGES - images.length} more needed)
+                                                        📷 Click to Upload Images
+                                                        {images.length < MIN_IMAGES
+                                                            ? ` (${MIN_IMAGES - images.length} more required)`
+                                                            : ` (${images.length}/${MAX_IMAGES} — optional)`
+                                                        }
                                                         <input
                                                             type="file"
                                                             accept="image/*"
@@ -261,10 +281,11 @@ const AddBike = () => {
                                                     </div>
                                                 )}
 
-                                                {/* All 5 uploaded confirmation */}
-                                                {images.length === REQUIRED_IMAGES && (
+                                                {/* Minimum met confirmation */}
+                                                {images.length >= MIN_IMAGES && (
                                                     <div className="text-success small mt-2 fw-semibold">
-                                                        ✅ All 5 images uploaded — ready to submit!
+                                                        ✅ {images.length} image{images.length > 1 ? 's' : ''} uploaded
+                                                        {images.length < MAX_IMAGES ? ` — you can add ${MAX_IMAGES - images.length} more (optional)` : ' — maximum reached!'}
                                                     </div>
                                                 )}
                                             </div>
@@ -273,18 +294,18 @@ const AddBike = () => {
                                         <div className="d-flex gap-2 mt-2">
                                             <button
                                                 type="submit"
-                                                disabled={isSubmitting || images.length !== REQUIRED_IMAGES}
+                                                disabled={isSubmitting || images.length < MIN_IMAGES}
                                                 className="btn btn-lg text-white"
                                                 style={{
-                                                    backgroundColor: images.length === REQUIRED_IMAGES ? 'blueviolet' : '#b0a0d8',
-                                                    cursor: images.length !== REQUIRED_IMAGES ? 'not-allowed' : 'pointer'
+                                                    backgroundColor: images.length >= MIN_IMAGES ? 'blueviolet' : '#b0a0d8',
+                                                    cursor: images.length < MIN_IMAGES ? 'not-allowed' : 'pointer'
                                                 }}
                                                 onClick={() => {
-                                                    if (images.length !== REQUIRED_IMAGES)
-                                                        setImageError(`Please upload at least ${REQUIRED_IMAGES} bike images.`);
+                                                    if (images.length < MIN_IMAGES)
+                                                        setImageError(`Please upload at least ${MIN_IMAGES} images of the product.`);
                                                 }}
                                             >
-                                                {isSubmitting ? 'Adding Bike...' : `Add Bike 🏍️${images.length !== REQUIRED_IMAGES ? ` (${images.length}/${REQUIRED_IMAGES} images)` : ''}`}
+                                                {isSubmitting ? 'Adding Bike...' : `Add Bike 🏍️${images.length < MIN_IMAGES ? ` (${images.length}/${MIN_IMAGES} required)` : ''}`}
                                             </button>
                                             <button
                                                 type="button"
