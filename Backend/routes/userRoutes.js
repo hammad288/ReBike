@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/user");
+const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const Order = require("../models/Order");
 const Bike = require("../models/Bike");
@@ -30,7 +30,7 @@ router.put("/profileUpdate", verifyToken, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       updateData,
-      { new: true }
+      { returnDocument: 'after' }
     ).select("-password");
 
     if (!updatedUser) {
@@ -55,8 +55,8 @@ router.post("/placeOrder", verifyToken, async (req, res) => {
     const order = new Order({
       buyer: req.user.id,
       bikes: bikeIds,
-      payment: { success: true, transactionId: `TXN-${Date.now()}` },
-      status: "Processing",
+      payment: { success: false, transactionId: null },
+      status: "Not Processed",
     });
 
     await order.save();

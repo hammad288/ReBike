@@ -1,47 +1,83 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import AdminMenu from './AdminMenu'
-import axios from 'axios'
 import { Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { ColorRing } from 'react-loader-spinner'
+import { toast } from 'react-toastify'
 import { PiCurrencyInrFill } from 'react-icons/pi'
 import { BsSpeedometer } from 'react-icons/bs'
+import { useAuth } from '../context/auth';
+import api from '../services/apiService';
+
+const PAGE_SIZE = 12;
+
+const SkeletonCard = () => (
+    <div className="col-md-12 col-lg-4 mb-3 my-3">
+        <div className="skeleton-card p-0">
+            <div className="d-flex justify-content-between p-3">
+                <div className="skeleton-block skeleton-line" style={{ width: '40%', margin: 0 }} />
+                <div className="skeleton-block" style={{ height: 20, width: 60, borderRadius: 12 }} />
+            </div>
+            <div className="skeleton-block skeleton-img" />
+            <div className="p-3">
+                <div className="skeleton-block skeleton-title" />
+                <div className="skeleton-block skeleton-line" />
+                <div className="d-flex justify-content-center gap-2 mt-2">
+                    <div className="skeleton-block skeleton-btn" style={{ width: '40%' }} />
+                    <div className="skeleton-block skeleton-btn" style={{ width: '40%' }} />
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 const Bikes = () => {
-
+    const [auth] = useAuth();
     const [bikes, setBikes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
-    const getAllBikes = async () => {
+    const fetchPage = useCallback(async (pageNum, append = false) => {
+        if (append) setLoadingMore(true); else setLoading(true);
         try {
-            const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/bikes/admin/all`);
-            if (data.success) {
-                setBikes(data.bikes);
+            const res = await api.get(
+                `/api/bikes/admin/all?withImages=true&page=${pageNum}&limit=${PAGE_SIZE}`
+            );
+            if (res.data?.success) {
+                const fetched = res.data.bikes || [];
+                setBikes(prev => append ? [...prev, ...fetched] : fetched);
+                setHasMore(res.data.currentPage < res.data.totalPages);
             }
+        } catch (err) {
+            toast.error('Error loading bikes');
+        } finally {
             setLoading(false);
-        } catch (error) {
-            console.log(error);
-            setLoading(false);
+            setLoadingMore(false);
         }
+    }, []);
+
+    useEffect(() => {
+        if (auth?.token) fetchPage(1);
+        window.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [auth?.token]);
+
+    const handleLoadMore = () => {
+        const next = page + 1;
+        setPage(next);
+        fetchPage(next, true);
     };
 
     const handleDelete = async (id) => {
+        if (!window.confirm('Delete this bike?')) return;
         try {
-            const { data } = await axios.delete(`${process.env.REACT_APP_API_URL}/api/bikes/admin/${id}`);
-            if (data.message) {
-                toast.success('Bike Deleted Successfully');
-                getAllBikes();
-            }
+            await api.delete(`/api/bikes/admin/${id}`);
+            toast.success('Bike Deleted Successfully');
+            setBikes(prev => prev.filter(b => b._id !== id));
         } catch (err) {
-            console.log(err);
-            toast.error('Error in Deleting Bike');
+            toast.error('Error deleting bike');
         }
     };
-
-    useEffect(() => {
-        getAllBikes();
-        window.scrollTo(0, 0);
-    }, []);
 
     const getStatusBadge = (status) => {
         const colors = { approved: 'success', pending: 'warning', rejected: 'danger' };
@@ -56,19 +92,19 @@ const Bikes = () => {
                         <AdminMenu />
                     </div>
                     <div className="col-md-9">
-                        <h1 className="text-center my-3">All Bikes List</h1>
-                        {loading ?
-                            <div className="h-100 d-flex align-items-center justify-content-center">
-                                <ColorRing
-                                    visible={true}
-                                    colors={['#000435', 'rgb(14 165 233)', 'rgb(243 244 246)', '#000435', 'rgb(14 165 233)']}
-                                />
+                        <h1 className="text-center my-3">
+                            All Bikes List {!loading && `(${bikes.length}${hasMore ? '+' : ''})`}
+                        </h1>
+
+                        {loading ? (
+                            <div className="row">
+                                {Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonCard key={i} />)}
                             </div>
-                            :
-                            bikes.length === 0 ? (
-                                <p className="text-center text-muted mt-5">No bikes found.</p>
-                            ) : (
-                                <div className="row" style={{ marginTop: '0px' }}>
+                        ) : bikes.length === 0 ? (
+                            <p className="text-center text-muted mt-5">No bikes found.</p>
+                        ) : (
+                            <>
+                                <div className="row">
                                     {bikes.map((bike) => (
                                         <div key={bike._id} className="col-md-12 col-lg-4 mb-lg-0 my-3">
                                             <div className="card h-100">
@@ -83,6 +119,7 @@ const Bikes = () => {
                                                             alt={bike.model}
                                                             className='border rounded img-fluid'
                                                             style={{ maxHeight: '120px', objectFit: 'contain' }}
+                                                            loading="lazy"
                                                         />
                                                     </div>
                                                 )}
@@ -111,9 +148,18 @@ const Bikes = () => {
                                             </div>
                                         </div>
                                     ))}
+                                    {loadingMore && Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={`more-${i}`} />)}
                                 </div>
-                            )
-                        }
+
+                                {hasMore && !loadingMore && (
+                                    <div className="text-center my-4">
+                                        <button className="load-more-btn" onClick={handleLoadMore}>
+                                            Load More Bikes
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

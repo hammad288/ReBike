@@ -63,6 +63,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
         fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchStats = async () => {

@@ -9,6 +9,7 @@ import { AiOutlineShoppingCart } from 'react-icons/ai';
 import { PiCurrencyInrFill } from 'react-icons/pi';
 import { toast } from 'react-toastify';
 import '../styles/cart.css';
+import { saveCartToStorage } from '../utils/cartStorage';
 
 const Cart = () => {
   // useCart returns [cart, setCart] array
@@ -18,6 +19,16 @@ const Cart = () => {
   const [clientToken, setClientToken] = useState('');
   const [instance, setInstance] = useState(null);
   const navigate = useNavigate();
+
+  // Redirect Admin/Seller away from cart - only regular users can buy
+  const userRole = auth?.user?.role;
+  useEffect(() => {
+    if (userRole === 'admin' || userRole === 'seller') {
+      toast.info('Cart is only available for regular users.');
+      navigate('/bikes');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRole]);
 
   // ── Total Price ──
   const totalPrice = () => {
@@ -32,7 +43,7 @@ const Cart = () => {
   const removeCartItem = (pid) => {
     const newCart = cart.filter(item => item._id !== pid);
     setCart(newCart);
-    localStorage.setItem('cart', JSON.stringify(newCart));
+    saveCartToStorage(newCart);
     toast.info('Item removed from cart');
   };
 
@@ -46,6 +57,13 @@ const Cart = () => {
       if (data?.clientToken) setClientToken(data.clientToken);
     } catch (err) {
       console.log('TOKEN ERROR:', err);
+      // 400 = invalid/expired token, 401 = missing token — force re-login
+      const status = err?.response?.status;
+      if (status === 400 || status === 401) {
+        toast.error('Your session has expired. Please log in again.');
+        localStorage.removeItem('auth');
+        navigate('/login');
+      }
     }
   };
 

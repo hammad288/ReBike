@@ -11,6 +11,8 @@ import { MdCompareArrows, MdOutlinePropaneTank, MdAirlineSeatReclineExtra } from
 import { GiBackwardTime } from 'react-icons/gi'
 import { AiOutlineShoppingCart } from 'react-icons/ai'
 import { useCart } from '../context/cart';
+import { useAuth } from '../context/auth';
+import { saveCartToStorage } from '../utils/cartStorage';
 import toast from 'react-hot-toast';
 import { AiOutlineEye } from 'react-icons/ai'
 import { PiCurrencyInrFill } from 'react-icons/pi'
@@ -23,8 +25,10 @@ const CarView = () => {
     const params = useParams();
     const [car, setCar] = useState({ name: '', description: '', productPictures: [], price: '', brand: '', fuelTank: '', fuelType: '', mileage: '', safetyrating: '', warranty: '', seater: '', size: '', });
     const [cart, setcart] = useCart()
+    const [auth] = useAuth();
     const [relatedCar, setRelatedCar] = useState([]);
     const [loading, setLoading] = useState(true);
+    const isRegularUser = !auth?.user || auth?.user?.role === 'user';
 
     const getCar = async () => {
         try {
@@ -54,6 +58,7 @@ const CarView = () => {
             console.log('error')
         }
         window.scrollTo(0, 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params?.slug]);
 
     const notify = () => toast.success('Added To Cart Successfully');
@@ -100,6 +105,7 @@ const CarView = () => {
                                 <img
                                     decoding="async"
                                     src={car.brand.brandPictures}
+                                    alt={car.brand.name}
                                     className="img-fluid"
                                     style={{ maxWidth: '100%', maxHeight: '40px', objectFit: 'contain' }}
                                 />
@@ -110,48 +116,52 @@ const CarView = () => {
                         <h4>{car.name} Description : </h4><h6 className='lh-base ' style={{ textAlign: 'justify' }}>{car.description}</h6>
                         <h4>Rs. {car.price} Lakhs</h4>
                         <h4>Released At : {updatedAt}</h4>
-                        <button style={{ backgroundColor: 'blueviolet' }} className='btn text-white my-1' onClick={() => { setcart([...cart, car]); localStorage.setItem('cart', JSON.stringify([...cart, car])); notify() }} ><AiOutlineShoppingCart size={20} className='pb-1' /> Add To Cart</button>
-                        <Link className='btn btn-outline-primary mx-2' to='/cart'><AiOutlineEye size={20} className='pb-1' /> View Cart</Link>
+                        {isRegularUser && (
+                            <>
+                                <button style={{ backgroundColor: 'blueviolet' }} className='btn text-white my-1' onClick={() => { const updated = [...cart, car]; setcart(updated); saveCartToStorage(updated); notify() }} ><AiOutlineShoppingCart size={20} className='pb-1' /> Add To Cart</button>
+                                <Link className='btn btn-outline-primary mx-2' to='/cart'><AiOutlineEye size={20} className='pb-1' /> View Cart</Link>
+                            </>
+                        )}
                         <table className="table table-bordered my-4">
                             <thead>
                                 <tr>
-                                    <td scope="row" className='p-3'>
+                                    <td className='p-3'>
                                         <p className='text-secondary '><BsFuelPumpFill size={25} /> FuelType</p>
                                         <h5>{car.fuelType}</h5>
                                     </td>
-                                    <td scope="row" className='p-3'>
+                                    <td className='p-3'>
                                         <p className='text-secondary '><TbEngine size={25} /> Mileage</p>
                                         <h5>{car.mileage}</h5>
-                                    </td><td scope="row" className='p-3'>
+                                    </td><td className='p-3'>
                                         <p className='text-secondary '><TbStars size={25} /> Safety Rating</p>
                                         <h5>{car.safetyrating}</h5>
                                     </td>
                                 </tr>
 
                                 <tr>
-                                    <td scope="row" className='p-3'>
+                                    <td className='p-3'>
                                         <p className='text-secondary '><GiBackwardTime size={25} /> Warranty</p>
                                         <h5>{car.warranty}</h5>
                                     </td>
-                                    <td scope="row" className='p-3'>
+                                    <td className='p-3'>
                                         <p className='text-secondary '><MdAirlineSeatReclineExtra size={25} /> Seater</p>
                                         <h5>{car.seater}</h5>
-                                    </td><td scope="row" className='p-3'>
+                                    </td><td className='p-3'>
                                         <p className='text-secondary '><MdCompareArrows size={25} /> Size</p>
                                         <h5>{car.size}</h5>
                                     </td>
                                 </tr>
 
                                 <tr>
-                                    <td scope="row" className='p-3'>
+                                    <td className='p-3'>
                                         <p className='text-secondary '><MdOutlinePropaneTank size={25} /> Fuel Tank</p>
                                         <h5>{car.fuelTank}</h5>
                                     </td>
-                                    <td scope="row" className='p-3'>
+                                    <td className='p-3'>
                                         <p className='text-secondary '><AiOutlineColumnWidth size={25} /> Engine Size</p>
                                         <h5>{car.engineSize}</h5>
                                     </td>
-                                    <td scope="row" className='p-3'>
+                                    <td className='p-3'>
                                         <p className='text-secondary '><AiOutlineNodeIndex size={25} /> Transmission</p>
                                         <h5>{car.transmission}</h5>
                                     </td>
@@ -193,7 +203,9 @@ const CarView = () => {
                                                 </div>
                                                 <div className='text-center'>
                                                     <Link className='btn my-2  ' style={{ backgroundColor: 'blueviolet', color: 'white' }} to={`/car/${p.slug}`}><AiOutlineEye size={20} className='pb-1' /> View</Link>
-                                                    <button className='btn btn-outline-primary my-2 mx-3 ' onClick={() => { setcart([...cart, p]); localStorage.setItem('cart', JSON.stringify([...cart, p])); notify() }} ><AiOutlineShoppingCart size={20} className='pb-1' /> Add To Cart</button>
+                                                    {isRegularUser && (
+                                                        <button className='btn btn-outline-primary my-2 mx-3 ' onClick={() => { const updated = [...cart, p]; setcart(updated); saveCartToStorage(updated); notify() }} ><AiOutlineShoppingCart size={20} className='pb-1' /> Add To Cart</button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

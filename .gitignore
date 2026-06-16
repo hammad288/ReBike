@@ -28,3 +28,9 @@ yarn-error.log*
 *.tar
 *.tar.gz
 .cache/
+
+# Large data / generated files
+*.csv
+*.pdf
+*.pptx
+backend.zip

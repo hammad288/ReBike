@@ -4,6 +4,8 @@ const braintree = require("braintree");
 const { verifyToken } = require("../middleware/authMiddleware");
 const Order = require("../models/Order");
 const Bike = require("../models/Bike");
+const User = require("../models/User");
+const { sendBuyerSMS, sendSellerSMS, sendAdminSMS } = require("../services/smsService");
 require("dotenv").config();
 
 // ── Gateway Setup ────────────────────────────────────────────────────────────
@@ -61,8 +63,8 @@ router.post("/payment", verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, error: "No bikes provided." });
     }
 
-    // Step 1: Verify bikes and calculate total
-    const bikes = await Bike.find({ _id: { $in: bikeIds } });
+    // Step 1: Verify bikes and calculate total (populate seller for SMS)
+    const bikes = await Bike.find({ _id: { $in: bikeIds } }).populate("seller", "name phone");
     if (bikes.length === 0) {
       return res.status(404).json({ success: false, error: "Bikes not found." });
     }
@@ -160,6 +162,62 @@ router.post("/payment", verifyToken, async (req, res) => {
     });
 
     await order.save();
+
+    // ── Send SMS to buyer, seller & all admins (non-blocking) ───────────────
+    setImmediate(async () => {
+      try {
+        const [buyer, admins] = await Promise.all([
+          User.findById(req.user.id).select("name phone"),
+          User.find({ role: "admin" }).select("name phone"),
+        ]);
+
+        const bike      = bikes[0];
+        const bikeName  = bike ? `${bike.brand} ${bike.model}` : "a bike";
+        const seller    = bike?.seller;
+        const buyerName = buyer?.name  || "A user";
+        const buyerPhone= buyer?.phone || "";
+
+        const tasks = [];
+
+        // 1️⃣ Buyer SMS
+        if (buyer?.phone) {
+          tasks.push(
+            sendBuyerSMS(buyer.phone, bikeName, order._id.toString())
+              .then(() => console.log("✅ Buyer SMS sent"))
+              .catch(e => console.error("❌ Buyer SMS failed:", e.message))
+          );
+        }
+
+        // 2️⃣ Seller SMS
+        if (seller?.phone) {
+          tasks.push(
+            sendSellerSMS(seller.phone, bikeName, buyerName, buyerPhone)
+              .then(() => console.log("✅ Seller SMS sent"))
+              .catch(e => console.error("❌ Seller SMS failed:", e.message))
+          );
+        } else {
+          console.log("⚠️ Seller phone not found — seller SMS skipped");
+        }
+
+        // 3️⃣ Admin SMS
+        if (admins?.length > 0) {
+          admins.forEach(admin => {
+            if (admin.phone) {
+              tasks.push(
+                sendAdminSMS(admin.phone, bikeName, buyerName, seller?.name || "Unknown Seller")
+                  .then(() => console.log(`✅ Admin SMS sent to ${admin.name}`))
+                  .catch(e => console.error(`❌ Admin SMS failed:`, e.message))
+              );
+            }
+          });
+        }
+
+        await Promise.allSettled(tasks);
+        console.log("📱 All SMS notifications processed");
+      } catch (smsErr) {
+        console.error("❌ SMS block error:", smsErr.message);
+      }
+    });
 
     res.json({
       success: true,

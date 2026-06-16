@@ -3,18 +3,22 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import '../styles/brands.css';
 import { useCart } from '../context/cart';
+import { useAuth } from '../context/auth';
 import { AiOutlineShoppingCart, AiOutlineEye } from 'react-icons/ai';
 import { BsSpeedometer } from 'react-icons/bs';
 import { PiCurrencyInrFill } from 'react-icons/pi';
 import { toast } from 'react-toastify';
 import { ColorRing } from 'react-loader-spinner';
+import { saveCartToStorage } from '../utils/cartStorage';
 
 const CarInBrand = () => {
     const params = useParams();
     const [brandInfo, setBrandInfo] = useState(null);
     const [bikes, setBikes] = useState([]);
     const [cart, setcart] = useCart();
+    const [auth] = useAuth();
     const [loading, setLoading] = useState(true);
+    const isRegularUser = !auth?.user || auth?.user?.role === 'user';
 
     const getBrandAndBikes = async () => {
         try {
@@ -48,6 +52,7 @@ const CarInBrand = () => {
     useEffect(() => {
         getBrandAndBikes();
         window.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params.slug]);
 
     return (
@@ -131,16 +136,19 @@ const CarInBrand = () => {
                                             >
                                                 <AiOutlineEye size={18} className="pb-1" /> View
                                             </Link>
-                                            <button
-                                                className="btn btn-outline-primary my-2 mx-2"
-                                                onClick={() => {
-                                                    setcart([...cart, bike]);
-                                                    localStorage.setItem('cart', JSON.stringify([...cart, bike]));
-                                                    notify();
-                                                }}
-                                            >
-                                                <AiOutlineShoppingCart size={18} className="pb-1" /> Add To Cart
-                                            </button>
+                                            {isRegularUser && (
+                                                <button
+                                                    className="btn btn-outline-primary my-2 mx-2"
+                                                    onClick={() => {
+                                                        const updated = [...cart, bike];
+                                                        setcart(updated);
+                                                        saveCartToStorage(updated);
+                                                        notify();
+                                                    }}
+                                                >
+                                                    <AiOutlineShoppingCart size={18} className="pb-1" /> Add To Cart
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

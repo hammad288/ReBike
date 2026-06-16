@@ -14,12 +14,23 @@ router.post("/bikes", async (req, res) => {
     // Backend validation — minimum 3, maximum 5 images
     if (!images || !Array.isArray(images) || images.length < 3 || images.length > 5) {
       return res.status(400).json({
+        success: false,
         message: `Please upload at least 3 images of the product (max 5). You provided ${images?.length || 0}.`,
       });
     }
 
+    const { brand, model, year, price, kmDriven, location, condition, description, images: imgs } = req.body;
+
     const bikeData = {
-      ...req.body,
+      brand,
+      model,
+      year: Number(year),
+      price: Number(price),
+      kmDriven: Number(kmDriven),
+      location,
+      condition,
+      description,
+      images: imgs,
       seller: req.user.id,
       status: 'pending',
     };
@@ -28,11 +39,17 @@ router.post("/bikes", async (req, res) => {
     await bike.save();
 
     res.status(201).json({
+      success: true,
       message: "Bike added successfully. Waiting for admin approval.",
       bike,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('=== ADD BIKE 500 ERROR ===');
+    console.error('Name:', error.name);
+    console.error('Message:', error.message);
+    console.error('Code:', error.code);
+    if (error.errors) console.error('Validation:', JSON.stringify(error.errors));
+    res.status(500).json({ success: false, message: error.message, name: error.name });
   }
 });
 
@@ -40,6 +57,7 @@ router.post("/bikes", async (req, res) => {
 router.get("/bikes", async (req, res) => {
   try {
     const bikes = await Bike.find({ seller: req.user.id })
+      .select('-images')
       .populate("seller", "name email")
       .sort({ createdAt: -1 });
 
@@ -49,12 +67,14 @@ router.get("/bikes", async (req, res) => {
       bikes,
     });
   } catch (error) {
+    console.error('Get seller bikes error:', error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
 // ================= GET SINGLE BIKE =================
 router.get("/bikes/:id", async (req, res) => {
+
   try {
     const bike = await Bike.findOne({
       _id: req.params.id,

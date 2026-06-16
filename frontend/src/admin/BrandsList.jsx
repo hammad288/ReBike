@@ -52,7 +52,7 @@ const CreateCategory = () => {
                 toast.success('Brand Deleted Successfully')
                 getAllBrand()
             } else {
-                toast.error('Failed to Delete ${name} Brand')
+                toast.error(`Failed to Delete ${updatedName} Brand`)
             }
         } catch (err) {
             console.log(err)

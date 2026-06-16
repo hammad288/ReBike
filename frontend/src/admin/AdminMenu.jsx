@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 const menuItems = [
     { to: '/dashboard/admin', label: 'Dashboard', icon: '📊', end: true },
     { to: '/dashboard/admin/manage-bikes', label: 'Manage Bikes', icon: '🛵' },
+    { to: '/dashboard/admin/verifications', label: 'Verifications', icon: '📋' },
     { to: '/dashboard/admin/bikes', label: 'Bikes List', icon: '🏍️' },
     { to: '/dashboard/admin/create-bike', label: 'Create Bike', icon: '➕' },
     { to: '/dashboard/admin/allbrands', label: 'Brands List', icon: '🏷️' },

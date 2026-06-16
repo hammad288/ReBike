@@ -18,10 +18,12 @@ const ManageBikes = () => {
 
     useEffect(() => {
         fetchBikes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
         filterBikes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, bikes, searchTerm]);
 
     const fetchBikes = async () => {

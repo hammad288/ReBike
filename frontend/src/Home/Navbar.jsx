@@ -11,8 +11,6 @@ const Navbar = () => {
 
     const [auth, setAuth] = useAuth();
     const [cart] = useCart()
-    const [click, setClick] = useState(false)
-    const handleClick = () => setClick(!click)
 
     const [color, setcolor] = useState(false)
 
@@ -24,7 +22,10 @@ const Navbar = () => {
         }
     }
 
-    window.addEventListener('scroll', changeColor)
+    useEffect(() => {
+        window.addEventListener('scroll', changeColor)
+        return () => window.removeEventListener('scroll', changeColor)
+    }, [])
 
     const handleSubmit = () => {
         setAuth({
@@ -84,10 +85,12 @@ const Navbar = () => {
                             <Link to='/about' className="nav-item nav-link" style={{ textDecoration: 'none' }} aria-current="page">About</Link>
                             <Link to='/brands' className="nav-item nav-link" style={{ textDecoration: 'none' }} aria-current="page">Brands</Link>
                             <Link to='/bikes' className="nav-item nav-link" style={{ textDecoration: 'none' }} aria-current="page">Bikes</Link>
-                            <Link to='/cart' style={{ textDecoration: 'none' }} className="nav-item nav-link">
-                                <span className="fa"><AiOutlineShoppingCart size={25} color='blueviolet' /></span>
-                                <span className='badge' style={{ marginLeft: '3px', paddingBottom: '2px', paddingTop: '1px' }} id='lblCartCount'>{cart?.length}</span>
-                            </Link>
+                            {(!auth.user || auth.user.role === 'user') && (
+                                <Link to='/cart' style={{ textDecoration: 'none' }} className="nav-item nav-link">
+                                    <span className="fa"><AiOutlineShoppingCart size={25} color='blueviolet' /></span>
+                                    <span className='badge' style={{ marginLeft: '3px', paddingBottom: '2px', paddingTop: '1px' }} id='lblCartCount'>{cart?.length}</span>
+                                </Link>
+                            )}
                         </ul>
 
                         {!auth.user ? (<ul className='mt-2 text-center'>

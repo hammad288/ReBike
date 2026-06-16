@@ -33,10 +33,12 @@ import SellerDashboard from './seller/SellerDashboard';
 import AddBike from './seller/AddBike';
 import MyBikes from './seller/MyBikes';
 import EditBike from './seller/EditBike';
+import VehicleVerification from './seller/VehicleVerification';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ManageBikes from './admin/ManageBikes';
 import AdminUsers from './admin/AdminUsers';
+import ManageVerifications from './admin/ManageVerifications';
 
 const NavbarWrapper = () => {
   const location = useLocation();
@@ -86,6 +88,7 @@ function App() {
             <Route path='admin/orders' element={<AdminOrders/>}/>
             <Route path='admin/manage-bikes' element={<ManageBikes/>}/>
             <Route path='admin/users' element={<AdminUsers/>}/>
+            <Route path='admin/verifications' element={<ManageVerifications/>}/>
       </Route>
       <Route path='/dashboard' element={<PrivateRoute/>}>
             <Route path='user' element={<UserDashboard/>} />
@@ -97,6 +100,8 @@ function App() {
             <Route path='seller/add-bike' element={<AddBike/>} />
             <Route path='seller/my-bikes' element={<MyBikes/>} />
             <Route path='seller/edit-bike/:id' element={<EditBike/>} />
+            <Route path='seller/verify-bike/:bikeId' element={<VehicleVerification/>} />
+            <Route path='seller/profile' element={<UserProfile/>} />
       </Route>
       </Routes>
       <Footer/>

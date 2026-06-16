@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/auth';
 import { sellerAPI } from '../services/apiService';
@@ -7,13 +7,13 @@ import '../styles/hero.css';
 
 const MyBikes = () => {
     const [auth] = useAuth();
-    const navigate = useNavigate();
     const [bikes, setBikes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all'); // all, approved, pending
 
     useEffect(() => {
         fetchBikes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchBikes = async () => {

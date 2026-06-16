@@ -10,6 +10,21 @@ const api = axios.create({
   },
 });
 
+// Interceptor: always attach the latest token from localStorage
+// This prevents auth failures caused by React context not being loaded yet
+api.interceptors.request.use((config) => {
+  try {
+    const stored = localStorage.getItem('auth');
+    if (stored) {
+      const { token } = JSON.parse(stored);
+      if (token && !config.headers['Authorization']) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+  } catch (_) {}
+  return config;
+});
+
 // Auth API calls
 export const authAPI = {
   // Register new user
@@ -317,4 +332,115 @@ export const adminAPI = {
   },
 };
 
+// ================= VERIFICATION API =================
+export const verificationAPI = {
+  // Seller: submit (or re-submit) verification documents for a bike
+  submit: async (data, token) => {
+    try {
+      const response = await api.post('/api/verification', data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to submit verification.',
+      };
+    }
+  },
+
+  // Seller: get all my verifications
+  getMy: async (token) => {
+    try {
+      const response = await api.get('/api/verification/my', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch verifications.',
+      };
+    }
+  },
+
+  // Seller: get verification status for a specific bike
+  getMyForBike: async (bikeId, token) => {
+    try {
+      const response = await api.get(`/api/verification/my/${bikeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch verification status.',
+      };
+    }
+  },
+
+  // Admin: get all verifications
+  adminGetAll: async (token) => {
+    try {
+      const response = await api.get('/api/verification/admin/all', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch verifications.',
+      };
+    }
+  },
+
+  // Admin: get single verification with full document images
+  adminGetOne: async (id, token) => {
+    try {
+      const response = await api.get(`/api/verification/admin/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch verification details.',
+      };
+    }
+  },
+
+  // Admin: approve a verification
+  adminVerify: async (id, token) => {
+    try {
+      const response = await api.put(`/api/verification/admin/verify/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to approve verification.',
+      };
+    }
+  },
+
+  // Admin: reject a verification
+  adminReject: async (id, reason, token) => {
+    try {
+      const response = await api.put(
+        `/api/verification/admin/reject/${id}`,
+        { reason },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to reject verification.',
+      };
+    }
+  },
+};
+
 export default api;
+

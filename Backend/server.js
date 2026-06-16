@@ -23,6 +23,7 @@ app.use("/api/bikes", require("./routes/bikeRouters"));
 app.use("/api/brand", require("./routes/brandRouters"));
 app.use("/api/braintree", require("./routes/braintreeRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/verification", require("./routes/verificationRoutes"));
 
 app.get("/", (req, res) => {
   res.send("ReBike API Running...");

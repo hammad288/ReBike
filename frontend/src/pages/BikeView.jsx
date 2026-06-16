@@ -5,9 +5,11 @@ import { AiOutlineShoppingCart, AiOutlineEye } from 'react-icons/ai';
 import { BsSpeedometer } from 'react-icons/bs';
 import { PiCurrencyInrFill } from 'react-icons/pi';
 import { useCart } from '../context/cart';
+import { useAuth } from '../context/auth';
 import { toast } from 'react-toastify';
 import { ColorRing } from 'react-loader-spinner';
 import '../styles/carview.css';
+import { saveCartToStorage } from '../utils/cartStorage';
 
 const BikeView = () => {
     const params = useParams();
@@ -15,8 +17,10 @@ const BikeView = () => {
     const [bike, setBike] = useState(null);
     const [relatedBikes, setRelatedBikes] = useState([]);
     const [cart, setcart] = useCart();
+    const [auth] = useAuth();
     const [loading, setLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
+    const isRegularUser = !auth?.user || auth?.user?.role === 'user';
 
     const getBike = async () => {
         try {
@@ -50,6 +54,7 @@ const BikeView = () => {
             getBike();
         }
         window.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params?.id]);
 
     const notify = () => toast.success('Added To Cart Successfully 🛒');
@@ -149,22 +154,26 @@ const BikeView = () => {
                     )}
 
                     <div className="d-flex gap-2 flex-wrap mt-4">
-                        <button
-                            className="btn btn-lg text-white"
-                            style={{ backgroundColor: 'blueviolet' }}
-                            onClick={() => {
-                                const updatedCart = [...cart, bike];
-                                setcart(updatedCart);
-                                localStorage.setItem('cart', JSON.stringify(updatedCart));
-                                notify();
-                                navigate('/cart');
-                            }}
-                        >
-                            <AiOutlineShoppingCart size={20} className="pb-1" /> Add To Cart
-                        </button>
-                        <Link to="/cart" className="btn btn-lg btn-outline-primary">
-                            <AiOutlineEye size={20} className="pb-1" /> View Cart
-                        </Link>
+                        {isRegularUser && (
+                            <>
+                                <button
+                                    className="btn btn-lg text-white"
+                                    style={{ backgroundColor: 'blueviolet' }}
+                                    onClick={() => {
+                                        const updatedCart = [...cart, bike];
+                                        setcart(updatedCart);
+                                        saveCartToStorage(updatedCart);
+                                        notify();
+                                        navigate('/cart');
+                                    }}
+                                >
+                                    <AiOutlineShoppingCart size={20} className="pb-1" /> Add To Cart
+                                </button>
+                                <Link to="/cart" className="btn btn-lg btn-outline-primary">
+                                    <AiOutlineEye size={20} className="pb-1" /> View Cart
+                                </Link>
+                            </>
+                        )}
                         {/* <Link to="/bikes" className="btn btn-lg btn-outline-secondary">
                             ← All Bikes
                         </Link> */}

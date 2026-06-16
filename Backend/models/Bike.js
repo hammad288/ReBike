@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 
 const bikeSchema = new mongoose.Schema(
   {
-    seller: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     brand: {
       type: String,
       required: true,
@@ -15,21 +10,24 @@ const bikeSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    year: {
-      type: Number,
-      required: true,
-    },
     price: {
       type: Number,
       required: true,
     },
+    year: {
+      type: Number,
+    },
     kmDriven: {
       type: Number,
-      required: true,
+    },
+    fuelType: {
+      type: String,
+    },
+    owner: {
+      type: String,
     },
     location: {
       type: String,
-      required: true,
     },
     condition: {
       type: String,
@@ -37,24 +35,30 @@ const bikeSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: false,
     },
     images: {
       type: [String],
       default: [],
     },
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
     rejectionReason: {
       type: String,
-      required: false,
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Bike", bikeSchema);
+// 🔥 INDEXES — speed up all bike queries
+bikeSchema.index({ createdAt: -1 });
+bikeSchema.index({ seller: 1, createdAt: -1 });
+bikeSchema.index({ status: 1, createdAt: -1 }); // most used: filter by status + sort by date
 
+module.exports = mongoose.models.Bike || mongoose.model("Bike", bikeSchema);

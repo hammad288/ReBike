@@ -7,22 +7,17 @@ import { authAPI } from '../services/apiService';
 import register from '../images/register.png';
 import '../styles/hero.css';
 
-// Validation Schema matching backend User model (name, email, password only)
-const RegisterSchema = Yup.object().shape({
-    name: Yup.string()
-        .min(2, 'Name must be at least 2 characters')
-        .max(50, 'Name must not exceed 50 characters')
-        .required('Name is required'),
-    email: Yup.string()
-        .email('Invalid email format')
-        .required('Email is required'),
-    password: Yup.string()
-        .min(6, 'Password must be at least 6 characters')
-        .max(50, 'Password must not exceed 50 characters')
-        .required('Password is required'),
-    role: Yup.string()
-        .oneOf(['user', 'seller'], 'Invalid role')
-        .required('Role is required'),
+const RegisterSchema = (role) => Yup.object().shape({
+    name: Yup.string().min(2).max(50).required('Name is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    password: Yup.string().min(6).max(50).required('Password is required'),
+    role: Yup.string().oneOf(['user', 'seller']).required('Role is required'),
+    phone: role === 'seller'
+        ? Yup.string()
+            .matches(/^[0-9]{10}$/, 'Enter a valid 10-digit mobile number')
+            .required('Phone number is required for sellers')
+        : Yup.string()
+            .matches(/^[0-9]{10}$|^$/, 'Enter a valid 10-digit mobile number'),
 });
 
 const Register = () => {
@@ -62,11 +57,16 @@ const Register = () => {
                         </div>
                         <div className="col-md-6 right-box">
                             <Formik
-                                initialValues={{ name: '', email: '', password: '', role: 'user' }}
-                                validationSchema={RegisterSchema}
+                                initialValues={{ name: '', email: '', password: '', role: 'user', phone: '' }}
+                                validate={(vals) => {
+                                    let errors = {};
+                                    try { RegisterSchema(vals.role).validateSync(vals, { abortEarly: false }); }
+                                    catch (e) { e.inner?.forEach(err => { errors[err.path] = err.message; }); }
+                                    return errors;
+                                }}
                                 onSubmit={handleSubmit}
                             >
-                                {({ isSubmitting }) => (
+                                {({ isSubmitting, values, setFieldValue }) => (
                                     <Form>
                                         <div className="row align-items-center">
                                             <div className="header-text mb-4">
@@ -122,17 +122,39 @@ const Register = () => {
                                                 </div>
                                             </div>
                                             
+                                            {/* Phone — only for sellers */}
+                                            {/* Phone — always visible, required for sellers */}
                                             <div className="input-group d-flex flex-row align-items-center mb-3">
                                                 <div className="form-outline flex-fill mb-0">
-                                                    <Field as="select" name="role" className="form-control">
+                                                    <Field
+                                                        name="phone"
+                                                        type="tel"
+                                                        placeholder="📱 Your 10-digit mobile number"
+                                                        className="form-control"
+                                                        maxLength={10}
+                                                    />
+                                                    <ErrorMessage name="phone" component="div" className="text-danger small mt-1" />
+                                                    <small className="text-muted">
+                                                        {values.role === 'seller'
+                                                            ? '⚠️ Required — buyers will contact you on this number'
+                                                            : 'Optional — needed to receive order confirmation SMS'}
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            {/* Role selector */}
+                                            <div className="input-group d-flex flex-row align-items-center mb-3">
+                                                <div className="form-outline flex-fill mb-0">
+                                                    <Field as="select" name="role" className="form-control"
+                                                        onChange={(e) => {
+                                                            setFieldValue('role', e.target.value);
+                                                            setFieldValue('phone', ''); // reset phone on role change
+                                                        }}
+                                                    >
                                                         <option value="user">Register as User</option>
                                                         <option value="seller">Register as Seller</option>
                                                     </Field>
-                                                    <ErrorMessage
-                                                        name="role"
-                                                        component="div"
-                                                        className="text-danger small mt-1"
-                                                    />
+                                                    <ErrorMessage name="role" component="div" className="text-danger small mt-1" />
                                                 </div>
                                             </div>
                                             

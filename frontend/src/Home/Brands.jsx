@@ -14,10 +14,10 @@ const Brands = () => {
             if (data.success) {
                 setBrand(data.brands);
             }
-            setLoading(false);
         } catch (err) {
-            console.log(err);
-            setLoading(true);
+            console.error('Brands fetch error:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -50,9 +50,11 @@ const Brands = () => {
                                     <Link to={`/brand/${c.slug}`}>
                                         <img
                                             src={c.brandPictures}
+                                            alt={c.name || 'brand'}
                                             className="mb-4 img-fluid"
                                             style={{ maxWidth: '100%', maxHeight: '190px', objectFit: 'contain' }}
                                             title={c.name}
+                                            loading="lazy"
                                         />
                                     </Link>
                                 </div>

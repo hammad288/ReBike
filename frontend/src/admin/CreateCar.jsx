@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminMenu from './AdminMenu';
 import axios from 'axios';
-import { Select, Modal } from 'antd';
+import { Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import Loading from './Loading'
 import toast from 'react-hot-toast';
@@ -164,7 +164,7 @@ const CreateCar = () => {
                             <AdminMenu />
                         </div>
                         <div className='col-md-9 my-3'>
-                            <form method='post' enctype="multipart/form-data">
+                            <form method='post' encType="multipart/form-data">
                                 <h1 className='text-center'>Create Car</h1>
                                 <div className='m-1'>
                                     <Select

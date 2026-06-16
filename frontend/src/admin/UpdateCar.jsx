@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import AdminMenu from './AdminMenu'
 import axios from 'axios'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 const UpdateCar = () => {
@@ -77,7 +77,7 @@ const UpdateCar = () => {
 
     const handleDelete = async () => {
         try {
-            const { data } = await axios.delete(`${process.env.REACT_APP_API_URL}/api/car/delete-car/${id}`)
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/car/delete-car/${id}`)
             toast.success('Car Deleted Successfully')
             navigate('/dashboard/admin/cars')
         } catch (err) {

@@ -6,6 +6,7 @@ import * as Yup from 'yup';
 import { useAuth } from '../context/auth';
 import { sellerAPI } from '../services/apiService';
 import '../styles/hero.css';
+import compressImage from '../utils/compressImage';
 
 // Validation Schema
 const BikeSchema = Yup.object().shape({
@@ -76,26 +77,43 @@ const AddBike = () => {
             return;
         }
         try {
+            // Always read token fresh from localStorage to avoid auth context race condition
+            let token = auth?.token;
+            if (!token) {
+                const stored = localStorage.getItem('auth');
+                if (stored) {
+                    token = JSON.parse(stored).token;
+                }
+            }
+
+            if (!token) {
+                toast.error('You are not logged in. Please login again.');
+                setSubmitting(false);
+                return;
+            }
+
+            // Compress each image to ≤1024px JPEG @ 75% quality before base64
+            // This keeps the MongoDB document well under the 16MB limit
             const imageBase64s = await Promise.all(
-                images.map(file => new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
-                }))
+                images.map(file => compressImage(file, 1024, 0.75))
             );
 
-            console.log('Submitting bike with images count:', imageBase64s.length);
-            console.log('Auth token present:', !!auth?.token);
-            console.log('User role:', auth?.user?.role);
+            const totalKB = Math.round(imageBase64s.reduce((sum, b64) => sum + b64.length, 0) / 1024);
+            console.log(`Submitting ${imageBase64s.length} images, total ~${totalKB} KB`);
 
             const bikePayload = { ...values, images: imageBase64s };
-            const result = await sellerAPI.addBike(bikePayload, auth.token);
+            const result = await sellerAPI.addBike(bikePayload, token);
 
             console.log('API result:', result);
 
             if (result.success) {
-                toast.success(result.data.message || 'Bike added successfully!');
-                navigate('/dashboard/seller/my-bikes');
+                const newBikeId = result.data?.bike?._id;
+                toast.success(result.data.message || 'Bike added! Please complete vehicle verification.');
+                if (newBikeId) {
+                    navigate(`/dashboard/seller/verify-bike/${newBikeId}`);
+                } else {
+                    navigate('/dashboard/seller/my-bikes');
+                }
             } else {
                 // Show exact error from backend
                 toast.error(result.message || 'Failed to add bike.');

@@ -10,13 +10,47 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 1
 
 // ================= PUBLIC ROUTES =================
 
-// GET all approved bikes (public)
+// GET all approved bikes (public) — supports filtering and pagination
 router.get("/approved", async (req, res) => {
   try {
-    const bikes = await Bike.find({ status: 'approved' })
+    const page   = parseInt(req.query.page)  || 1;
+    const limit  = parseInt(req.query.limit) || 12;
+    const skip   = (page - 1) * limit;
+
+    // Build filter query
+    const filter = { status: 'approved' };
+
+    if (req.query.brand) {
+      filter.brand = { $regex: new RegExp(`^${req.query.brand}$`, 'i') };
+    }
+    if (req.query.search) {
+      const s = req.query.search;
+      filter.$or = [
+        { brand: { $regex: s, $options: 'i' } },
+        { model: { $regex: s, $options: 'i' } },
+      ];
+    }
+    if (req.query.minPrice !== undefined || req.query.maxPrice !== undefined) {
+      filter.price = {};
+      if (req.query.minPrice !== undefined) filter.price.$gte = Number(req.query.minPrice);
+      if (req.query.maxPrice !== undefined) filter.price.$lte = Number(req.query.maxPrice);
+    }
+
+    const totalCount = await Bike.countDocuments(filter);
+    const bikes = await Bike.find(filter)
+      .slice('images', 1)
       .populate("seller", "name email")
-      .sort({ createdAt: -1 });
-    res.json({ success: true, bikes });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      success: true,
+      bikes,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -25,13 +59,26 @@ router.get("/approved", async (req, res) => {
 // ================= ADMIN ROUTES =================
 // NOTE: These MUST be defined before GET /:id to avoid the wildcard catching them first.
 
-// GET all bikes (admin only)
+// GET all bikes (admin only) — no images sent by default, admin table doesn't need them
+// Pass ?withImages=true&page=1&limit=12 for card view that needs images
 router.get("/admin/all", verifyToken, isAdmin, async (req, res) => {
   try {
-    const bikes = await Bike.find({})
-      .populate("seller", "name email")
-      .sort({ createdAt: -1 });
-    res.json({ success: true, bikes });
+    const withImages = req.query.withImages === 'true';
+    const page  = parseInt(req.query.page)  || 1;
+    const limit = parseInt(req.query.limit) || 1000; // default: all (no pagination) for table view
+    const skip  = (page - 1) * limit;
+
+    const totalCount = await Bike.countDocuments({});
+    let query = Bike.find({}).populate("seller", "name email").sort({ createdAt: -1 });
+
+    if (withImages) {
+      query = query.slice('images', 1).skip(skip).limit(limit);
+    } else {
+      query = query.select('-images');
+    }
+
+    const bikes = await query;
+    res.json({ success: true, bikes, totalCount, currentPage: page, totalPages: Math.ceil(totalCount / limit) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -41,6 +88,7 @@ router.get("/admin/all", verifyToken, isAdmin, async (req, res) => {
 router.get("/admin/pending", verifyToken, isAdmin, async (req, res) => {
   try {
     const bikes = await Bike.find({ status: 'pending' })
+      .select('-images')
       .populate("seller", "name email")
       .sort({ createdAt: -1 });
     res.json({ success: true, bikes });
@@ -53,6 +101,7 @@ router.get("/admin/pending", verifyToken, isAdmin, async (req, res) => {
 router.get("/admin/approved", verifyToken, isAdmin, async (req, res) => {
   try {
     const bikes = await Bike.find({ status: 'approved' })
+      .select('-images')
       .populate("seller", "name email")
       .sort({ createdAt: -1 });
     res.json({ success: true, bikes });
@@ -65,6 +114,7 @@ router.get("/admin/approved", verifyToken, isAdmin, async (req, res) => {
 router.get("/admin/rejected", verifyToken, isAdmin, async (req, res) => {
   try {
     const bikes = await Bike.find({ status: 'rejected' })
+      .select('-images')
       .populate("seller", "name email")
       .sort({ createdAt: -1 });
     res.json({ success: true, bikes });
@@ -79,7 +129,7 @@ router.put("/admin/approve/:id", verifyToken, isAdmin, async (req, res) => {
     const bike = await Bike.findByIdAndUpdate(
       req.params.id,
       { status: 'approved', rejectionReason: null },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!bike) {
       return res.status(404).json({ message: "Bike not found" });
@@ -97,7 +147,7 @@ router.put("/admin/reject/:id", verifyToken, isAdmin, async (req, res) => {
     const bike = await Bike.findByIdAndUpdate(
       req.params.id,
       { status: 'rejected', rejectionReason: reason || 'No reason provided' },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!bike) {
       return res.status(404).json({ message: "Bike not found" });
@@ -165,7 +215,7 @@ router.put("/admin/update/:id", verifyToken, isAdmin, async (req, res) => {
     const bike = await Bike.findByIdAndUpdate(
       req.params.id,
       { brand, model, year, price, kmDriven, location, condition, description, status },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!bike) {
       return res.status(404).json({ success: false, message: "Bike not found" });

@@ -138,7 +138,7 @@ const UserDashboard = () => {
                                         }}
                                     >
                                         <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '4px' }}>Role</div>
-                                        <div style={{ fontWeight: 600, color: '#222', textTransform: 'capitalize' }}>{auth?.user?.role === 1 ? 'Admin' : auth?.user?.role === 2 ? 'Seller' : 'Customer'}</div>
+                                        <div style={{ fontWeight: 600, color: '#222', textTransform: 'capitalize' }}>{auth?.user?.role === 'admin' ? 'Admin' : auth?.user?.role === 'seller' ? 'Seller' : 'Customer'}</div>
                                     </div>
                                 </div>
                             </div>

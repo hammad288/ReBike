@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import '../styles/brands.css';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { FaCarSide } from 'react-icons/fa';
 import { ColorRing } from 'react-loader-spinner';
 
 const Brandshome = () => {
@@ -14,14 +13,12 @@ const Brandshome = () => {
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/brand/getAll-brand`
       );
-
       if (data.success) {
         setBrand(data.brands.reverse());
       }
-
-      setLoading(false);
     } catch (err) {
-      console.log(err);
+      console.error('BrandsHome fetch error:', err);
+    } finally {
       setLoading(false);
     }
   };
@@ -68,6 +65,7 @@ const Brandshome = () => {
                       src={c.brandPictures}
                       alt={c.name || "brand"}
                       className="mb-4 img-fluid"
+                      loading="lazy"
                       style={{
                         maxWidth: '100%',
                         maxHeight: '190px',

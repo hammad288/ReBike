@@ -65,7 +65,7 @@ router.put("/update-brand/:id", verifyToken, isAdmin, async (req, res) => {
     try {
         const { name } = req.body;
         const slug = name.toLowerCase().replace(/\s+/g, '-');
-        const brand = await Brand.findByIdAndUpdate(req.params.id, { name, slug }, { new: true });
+        const brand = await Brand.findByIdAndUpdate(req.params.id, { name, slug }, { returnDocument: 'after' });
         if (!brand) return res.status(404).json({ success: false, message: "Brand not found" });
         res.json({ success: true, message: "Brand updated", brand });
     } catch (error) {

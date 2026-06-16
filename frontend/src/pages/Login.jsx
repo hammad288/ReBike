@@ -36,9 +36,17 @@ const Login = () => {
                     token: result.data.token,
                 });
                 localStorage.setItem('auth', JSON.stringify(result.data));
-                
-                // Redirect based on user role
+
                 const userRole = result.data.user.role;
+
+                // Warn seller if phone is missing (needed for SMS notifications)
+                if (userRole === 'seller' && !result.data.user.phone) {
+                    toast.warn(
+                        '📱 Add your phone number in Profile so buyers can reach you via SMS!',
+                        { autoClose: 6000 }
+                    );
+                }
+
                 if (userRole === 'seller') {
                     navigate('/dashboard/seller');
                 } else if (userRole === 'admin') {
