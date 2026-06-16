@@ -34,3 +34,21 @@ yarn-error.log*
 *.pdf
 *.pptx
 backend.zip
+
+# Loose image assets in frontend root (large files, not part of src)
+frontend/*.jpg
+frontend/*.jpeg
+frontend/*.png
+frontend/*.webp
+frontend/*.avif
+frontend/*.mhtml
+frontend/Screenshot*
+frontend/SUZUKI*
+frontend/SuperLow*
+frontend/adventure*
+frontend/apache*
+frontend/bmw*
+frontend/bobber*
+frontend/bonneville*
+frontend/bullet*
+frontend/buza*
