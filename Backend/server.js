@@ -44,8 +44,8 @@ app.use("/api/verification", require("./routes/verificationRoutes"));
 app.use(express.static(path.join(__dirname, "client")));
 
 // Any route that is NOT an /api/* route → serve React's index.html
-// This lets React Router handle client-side routing
-app.get("*", (req, res) => {
+// This lets React Router handle client-side routing (Express 5 syntax)
+app.get("{*path}", (req, res) => {
   res.sendFile(path.join(__dirname, "client", "index.html"));
 });
 
