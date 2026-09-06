@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
@@ -28,7 +29,7 @@ mongoose
     }
   });
 
-// Routes
+// API Routes
 app.use("/api/auth", require("./routes/authRouters"));
 app.use("/api/user", require("./routes/userRoutes"));
 app.use("/api/seller", require("./routes/sellerRoutes"));
@@ -38,8 +39,14 @@ app.use("/api/braintree", require("./routes/braintreeRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/verification", require("./routes/verificationRoutes"));
 
-app.get("/", (req, res) => {
-  res.send("ReBike API Running...");
+// ---------- Serve React Frontend (Production) ----------
+// After 'npm run build' in frontend/, the build output is copied to backend/client/
+app.use(express.static(path.join(__dirname, "client")));
+
+// Any route that is NOT an /api/* route → serve React's index.html
+// This lets React Router handle client-side routing
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "index.html"));
 });
 
 const PORT = process.env.PORT || 5000;

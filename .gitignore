@@ -15,6 +15,7 @@ Backend/node_modules/
 /build
 /dist
 frontend/build/
+backend/client/
 
 # Logs
 *.log
